@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit-element';
 import 'weightless/textfield';
 import 'weightless/button';
 import 'weightless/progress-spinner';
+import 'weightless/divider';
 
 import { getUserInfo as originalGetUserInfo } from './api/users.js';
 import { openSocket as originalOpenSocket } from './api/socket.js';
@@ -18,18 +19,27 @@ export const mockDependencies = dependencies => {
 export class QuestionsChat extends LitElement {
   static get properties() {
     return {
-      username: { type: String },
+      userDetails: { type: Object },
       ws: { type: Object },
       connectionError: { type: Boolean },
-      questions: { type: Array },
+      messages: { type: Array },
       users: { type: Array },
+      quotedMessage: { type: Object },
     };
   }
 
   static get styles() {
     return css`
       :host {
-        min-height: 100vh;
+        --gray1: #f0f0f0;
+        --gray2: #eaeaea;
+        --turquoise: #49bfaf;
+        --green: #60c38a;
+        --primary-hue: 224;
+        --primary-saturation: 45%;
+        --primary-400: 145.455, 35.9129%, 51.3529%;
+        --primary-500: 145.455, 45.2055%, 57.0588%;
+        --primary-600: 145.455, 57.346%, 62.7647%;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -50,70 +60,73 @@ export class QuestionsChat extends LitElement {
       }
 
       main {
-        flex-grow: 1;
-        display: grid;
+        display: flex;
+        flex-direction: column;
         width: 100%;
-        grid-template-columns: 70% 30%;
-        grid-template-rows: 80px auto 80px;
-        grid-template-areas:
-          'header header'
-          'questions users'
-          'add-question add-question';
-      }
-
-      main h1 {
-        grid-area: header;
-        isplay: flex;
-        align-items: center;
-        justify-content: center;
+        height: 100vh;
+        background-color: var(--gray1);
       }
 
       questions-list {
-        grid-area: questions;
         max-height: calc(100vh - 200px);
         overflow: scroll;
       }
 
-      users-list {
-        grid-area: users;
+      .quote {
+        display: flex;
+        background-color: var(--gray1);
+        padding: 20px;
       }
 
-      ask-question {
-        grid-area: add-question;
+      .quote question-item {
+        width: 100%;
+        margin-right: 5px;
+      }
+
+      .quote .close {
+        margin-left: auto;
+        flex-shrink: 0;
+        align-self: center;
       }
     `;
   }
 
   constructor() {
     super();
-    this.username = '';
+    this.userDetails = undefined;
     this.users = [];
-    this.questions = [];
+    this.messages = [];
+    this.quotedMessage = undefined;
   }
 
   async firstUpdated() {
-    const { username } = await getUserInfo();
-    this.username = username;
-
-    this.addEventListener('answer', ({ detail }) => {
-      this.ws.send(
-        JSON.stringify({
-          type: 'ANSWER',
-          ...detail,
-        })
+    this.addEventListener('reply', ({ detail: { messageId } }) => {
+      this.quotedMessage = this.messages.find(
+        message => message.id === messageId
       );
+      const event = new Event('reply');
+      this.askQuestionEl.dispatchEvent(event);
     });
 
-    this.addEventListener('question', ({ detail }) => {
+    this.addEventListener('message', ({ detail }) => {
       this.ws.send(
         JSON.stringify({
-          type: 'QUESTION',
           ...detail,
+          quotedMessageId: this.quotedMessage
+            ? this.quotedMessage.id
+            : undefined,
         })
       );
+      this.quotedMessage = undefined;
     });
 
-    this.ws = openSocket(username);
+    this.userDetails = await getUserInfo();
+    this.ws = openSocket({
+      id: this.userDetails.login.uuid,
+      firstName: this.userDetails.name.first,
+      lastName: this.userDetails.name.last,
+      pictureUrl: this.userDetails.picture.medium,
+    });
     this.ws.onerror = () => {
       this.connectionError = true;
     };
@@ -123,13 +136,17 @@ export class QuestionsChat extends LitElement {
       if (message.type === 'USERS') {
         this.users = message.users;
       } else {
-        this.questions = message.questions;
+        this.messages = message.messages;
       }
     });
   }
 
-  get questionEl() {
-    return this.shadowRoot.getElementById('question');
+  get askQuestionEl() {
+    return this.shadowRoot.getElementById('ask-question');
+  }
+
+  cancelReply() {
+    this.quotedMessage = undefined;
   }
 
   render() {
@@ -139,19 +156,40 @@ export class QuestionsChat extends LitElement {
       </h1>`;
     }
 
-    if (!this.username) {
+    if (!this.userDetails) {
       return html`<wl-progress-spinner class="spinner"></wl-progress-spinner>`;
     }
 
     return html`
       <main>
-        <h1>Questions!</h1>
-        <questions-list .questions=${this.questions}></questions-list>
-        <users-list
-          .users=${this.users}
-          currentUser="${this.username}"
-        ></users-list>
-        <ask-question></ask-question>
+        <users-list .users=${this.users}></users-list>
+        <messages-list
+          .messages=${this.messages}
+          currentUserId=${this.userDetails.login.uuid}
+        ></messages-list>
+        ${this.quotedMessage
+          ? html`<wl-divider></wl-divider>
+              <wl-card class="quote">
+                <message-item
+                  isQuoted
+                  id=${this.quotedMessage.id}
+                  .author=${this.quotedMessage.author}
+                  text=${this.quotedMessage.text}
+                  .answers=${this.quotedMessage.answers}
+                ></message-item>
+                <wl-button
+                  class="close"
+                  fab
+                  flat
+                  inverted
+                  @click=${this.cancelReply}
+                >
+                  <wl-icon>close</wl-icon>
+                </wl-button>
+              </wl-card>`
+          : ''}
+        <wl-divider></wl-divider>
+        <send-message id="ask-question"></send-message>
       </main>
     `;
   }

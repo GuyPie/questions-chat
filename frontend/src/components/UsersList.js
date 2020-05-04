@@ -1,11 +1,9 @@
 import { LitElement, html, css } from 'lit-element';
-import { classMap } from 'lit-html/directives/class-map';
 
 export class UsersList extends LitElement {
   static get properties() {
     return {
       users: { type: Array },
-      currentUser: { type: String },
     };
   }
 
@@ -16,16 +14,23 @@ export class UsersList extends LitElement {
         padding-left: 10px;
       }
 
-      .bold {
-        font-weight: bold;
+      ul {
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
       }
 
-      ul {
-        padding: 0 10px;
+      li {
+        list-style-type: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: 10px;
       }
 
       h3 {
         text-align: left;
+        margin: 10px 0;
       }
     `;
   }
@@ -33,18 +38,16 @@ export class UsersList extends LitElement {
   constructor() {
     super();
     this.users = [];
-    this.currentUser = '';
   }
 
   render() {
     return html`<div class="users">
-      <h3>${this.users.length} users online:</h3>
+      <h3>Online</h3>
       <ul>
         ${this.users.map(
-          user =>
-            html`<li class=${classMap({ bold: this.currentUser === user })}>
-              ${user}
-            </li>`
+          user => html`<li>
+            <user-image .user=${user}></user-image>
+          </li>`
         )}
       </ul>
     </div>`;

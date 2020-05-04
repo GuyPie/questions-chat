@@ -4,7 +4,7 @@ import 'weightless/textfield';
 import 'weightless/expansion';
 import 'weightless/button';
 
-export class AskQuestion extends LitElement {
+export class SendMessage extends LitElement {
   static get properties() {
     return {
       id: { type: String },
@@ -16,10 +16,11 @@ export class AskQuestion extends LitElement {
 
   static get styles() {
     return css`
-      .ask-question {
+      .send-message {
         display: flex;
         align-items: center;
-        padding: 0 20px;
+        padding: 10px 20px;
+        background-color: var(--gray1);
       }
 
       wl-textfield {
@@ -33,36 +34,48 @@ export class AskQuestion extends LitElement {
     `;
   }
 
-  get questionEl() {
-    return this.shadowRoot.getElementById('question');
+  firstUpdated() {
+    this.addEventListener('reply', () => {
+      this.messageEl.focus();
+    });
+  }
+
+  get messageEl() {
+    return this.shadowRoot.getElementById('message');
   }
 
   sendQuestion() {
-    if (this.questionEl.value) {
-      const event = new CustomEvent('question', {
+    if (this.messageEl.value) {
+      const event = new CustomEvent('message', {
         bubbles: true,
         composed: true,
-        detail: { text: this.questionEl.value },
+        detail: { text: this.messageEl.value },
       });
       this.dispatchEvent(event);
 
-      this.questionEl.value = '';
+      this.messageEl.value = '';
     }
   }
 
   render() {
-    return html`<form class="ask-question" onsubmit="return false;">
+    return html`<form class="send-message" onsubmit="return false;">
       <wl-textfield
-        id="question"
+        id="message"
         outlined
         filled
-        label="Any questions?"
+        label="Type a message"
       ></wl-textfield>
-      <wl-button type="submit" outlined @click="${this.sendQuestion}"
-        >Ask</wl-button
+      <wl-button
+        type="submit"
+        flat
+        inverted
+        outlined
+        @click="${this.sendQuestion}"
       >
+        <wl-icon>send</wl-icon>
+      </wl-button>
     </form>`;
   }
 }
 
-customElements.define('ask-question', AskQuestion);
+customElements.define('send-message', SendMessage);

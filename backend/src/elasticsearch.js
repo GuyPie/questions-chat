@@ -25,7 +25,7 @@ const insertQuestion = async (question, questionVector) => {
     index: 'questions',
     body: {
       id: question.id,
-      author: question.author,
+      author: question.authorId,
       text: question.text,
       text_vector: questionVector
     }

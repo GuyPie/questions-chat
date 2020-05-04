@@ -1,54 +1,63 @@
 const WebSocket = require('ws');
 const url = require('url');
-const { BOT_NAME, FEED_OUTBOUND_MESSAGE_TYPE, USERS_OUTBOUND_MESSAGE_TYPE } = require('./constants');
-const { getQuestions } = require('./questions');
+const { FEED_OUTBOUND_MESSAGE_TYPE, USERS_OUTBOUND_MESSAGE_TYPE } = require('./constants');
+const { getMessages } = require('./messages');
+const { addUser, getOnlineUsers, markUserOffline, getUser } = require('./users');
 
-const initSocket = () => {
-  return new WebSocket.Server({ port: 8080 });
-};
+class Socket {
+  constructor() {
+    this.wss = new WebSocket.Server({ port: 8080 });
+  }
 
-const onConnectionMessage = (wss, callback) => {
-  wss.on('connection', (ws, request) => {
-    const { query } = url.parse(request.url, true);
-    ws.id = query.id;
-    sendFeed(ws);
-    sendUsersListToAll(wss);
-  
-    ws.on('message', async (message) => {
-      await callback(query.id, JSON.parse(message));
-      sendFeedToAll(wss);
+  onConnectionMessage(callback) {
+    this.wss.on('connection', (ws, request) => {
+      const { query } = url.parse(request.url, true);
+      ws.id = query.id;
+      addUser({
+        id: query.id, 
+        firstName: query.firstName,
+        lastName: query.lastName,
+        pictureUrl: query.pictureUrl,
+      });
+      this.sendUsersList();
+      this.sendFeed(ws);
+    
+      ws.on('message', async (message) => {
+        await callback(query.id, JSON.parse(message));
+        this.sendFeed();
+      });
+      ws.on('close', () => {
+        markUserOffline(ws.id);
+        this.sendUsersList()
+      });  
     });
-    ws.on('close', () => sendUsersListToAll(wss));  
-  });
-};
+  };
 
-const sendFeed = (client) => {
-  client.send(JSON.stringify({
-    type: FEED_OUTBOUND_MESSAGE_TYPE,
-    questions: getQuestions(),
-  }));
-};
-
-const sendUsersListToAll = (wss) => {
-  const users = [...wss.clients].map(client => client.id);
-  users.unshift(BOT_NAME);
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
+  sendFeed(client) {
+    if (client) {
       client.send(JSON.stringify({
-        type: USERS_OUTBOUND_MESSAGE_TYPE,
-        users,
+        type: FEED_OUTBOUND_MESSAGE_TYPE,
+        messages: getMessages(),
       }));
+    } else {
+      this.wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          this.sendFeed(client);
+        }
+      });
     }
-  });
-};
+  }
 
-const sendFeedToAll = (wss) => {
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      sendFeed(client);
-    }
-  });
-};
+  sendUsersList() {
+    this.wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({
+          type: USERS_OUTBOUND_MESSAGE_TYPE,
+          users: getOnlineUsers(),
+        }));
+      }
+    });
+  }
+}
 
-module.exports = { initSocket, onConnectionMessage, sendUsersListToAll, sendFeed, sendFeedToAll };
+module.exports = Socket;

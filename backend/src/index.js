@@ -1,10 +1,9 @@
 require('@tensorflow/tfjs-node')
 const { load } = require('@tensorflow-models/universal-sentence-encoder');
 
-const { QUESTION_INBOUND_MESSAGE_TYPE, ANSWER_INBOUND_MESSAGE_TYPE } = require('./constants');
 const { getSimilarQuestions, insertQuestion } = require('./elasticsearch');
-const { addAnswer, addQuestion } = require('./questions');
-const { initSocket, onConnectionMessage, sendFeedToAll } = require('./socket');
+const { addMessage } = require('./messages');
+const Socket = require('./socket');
 const { sendBotAnswerIfAppropriate } = require('./bot');
 
 const processQuestion = async (model, wss, question) => {
@@ -15,7 +14,7 @@ const processQuestion = async (model, wss, question) => {
     const similarQuestions = await getSimilarQuestions(vector);
     const answerSent = sendBotAnswerIfAppropriate(question, similarQuestions);
     if (answerSent) {
-      sendFeedToAll(wss);
+      wss.sendFeed();
     }
 
     await insertQuestion(question, vector);
@@ -27,20 +26,17 @@ const processQuestion = async (model, wss, question) => {
 
 const init = async () => {
   const model = await load();
-  const wss = initSocket();
+  const wss = new Socket();
   
-  onConnectionMessage(wss, (userId, message) => {
-    if (message.type === QUESTION_INBOUND_MESSAGE_TYPE) {
-      const question = addQuestion({ 
-        author: userId,
-        text: message.text,
-      });
+  wss.onConnectionMessage((userId, message) => {
+    const question = addMessage({ 
+      authorId: userId,
+      text: message.text,
+      quotedMessageId: message.quotedMessageId,
+    });
+
+    if (!message.quotedMessageId) {
       processQuestion(model, wss, question);
-    } else if (message.type === ANSWER_INBOUND_MESSAGE_TYPE) {
-      addAnswer(message.questionId, {
-        author: userId,
-        text: message.text,
-      });
     }
   });
 }
