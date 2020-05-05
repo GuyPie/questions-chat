@@ -11,10 +11,18 @@ describe('QuestionsChat', () => {
     spies = {
       addEventListener: sinon.spy(),
       send: sinon.spy(),
+      getUserInfo: sinon.stub().resolves({
+        login: { uuid: 'abc123' },
+        name: { firstName: 'Some', lastName: 'User' },
+        picture: { medium: 'someurl' },
+      }),
     };
     mockDependencies({
-      getUserInfo: () => Promise.resolve({ username: 'abc123' }),
-      openSocket: () => spies,
+      getUserInfo: spies.getUserInfo,
+      openSocket: sinon.stub().returns({
+        addEventListener: spies.addEventListener,
+        send: spies.send,
+      }),
     });
     element = await fixture(html` <questions-chat></questions-chat> `);
   });
@@ -22,50 +30,30 @@ describe('QuestionsChat', () => {
   it('shows error when server is unresponsive', async () => {
     element.ws.onerror();
     await element.updateComplete;
-    const error = element.shadowRoot.querySelector('h1.error');
-    expect(error).to.exist;
+    const errorEl = element.shadowRoot.querySelector('h1.error');
+    expect(errorEl).to.exist;
   });
 
   it('shows spinner when loading user details', async () => {
-    mockDependencies({
-      getUserInfo: () => Promise.resolve({ username: undefined }),
-      openSocket: () => {},
-    });
+    spies.getUserInfo.resolves(undefined);
     element = await fixture(html` <questions-chat></questions-chat> `);
-    const spinner = element.shadowRoot.querySelector('wl-progress-spinner');
-    expect(spinner).to.exist;
+    const spinnerEl = element.shadowRoot.querySelector('wl-progress-spinner');
+    expect(spinnerEl).to.exist;
   });
 
   it('hides spinner on load', async () => {
-    const spinner = element.shadowRoot.querySelector('wl-progress-spinner');
-    expect(spinner).to.not.exist;
+    const spinnerEl = element.shadowRoot.querySelector('wl-progress-spinner');
+    expect(spinnerEl).to.not.exist;
   });
 
-  it('sends event on user answer', async () => {
-    const event = new CustomEvent('answer', {
-      detail: { questionId: '123', text: 'text text' },
-    });
-    element.dispatchEvent(event);
-    expect(
-      spies.send.calledWith(
-        JSON.stringify({
-          type: 'ANSWER',
-          questionId: '123',
-          text: 'text text',
-        })
-      )
-    ).to.be.true;
-  });
-
-  it('sends event on user question', async () => {
-    const event = new CustomEvent('question', {
+  it('sends event on user message', async () => {
+    const event = new CustomEvent('message', {
       detail: { text: 'text text?' },
     });
     element.dispatchEvent(event);
     expect(
       spies.send.calledWith(
         JSON.stringify({
-          type: 'QUESTION',
           text: 'text text?',
         })
       )
@@ -87,13 +75,70 @@ describe('QuestionsChat', () => {
     const payload = {
       data: JSON.stringify({
         type: 'FEED',
-        questions: [{ author: '123abc', text: 'How are you?' }],
+        messages: [{ author: '123abc', text: 'How are you?' }],
       }),
     };
     spies.addEventListener.yield(payload);
-    expect(element.questions).to.eql([
+    expect(element.messages).to.eql([
       { author: '123abc', text: 'How are you?' },
     ]);
+  });
+
+  it('shows quoted message on reply event', async () => {
+    const payload = {
+      data: JSON.stringify({
+        type: 'FEED',
+        messages: [{ id: '123', author: '123abc', text: 'How are you?' }],
+      }),
+    };
+    spies.addEventListener.yield(payload);
+    const event = new CustomEvent('reply', {
+      detail: { messageId: '123' },
+    });
+    element.dispatchEvent(event);
+    await element.updateComplete;
+    const quotedMessageEl = element.shadowRoot.querySelector('quoted-message');
+    expect(element.quotedMessage).to.eql({
+      id: '123',
+      author: '123abc',
+      text: 'How are you?',
+    });
+    expect(quotedMessageEl).to.exist;
+  });
+
+  it('focuses send message input on reply event', async () => {
+    const payload = {
+      data: JSON.stringify({
+        type: 'FEED',
+        messages: [{ id: '123', author: '123abc', text: 'How are you?' }],
+      }),
+    };
+    spies.addEventListener.yield(payload);
+    const spy = sinon.spy();
+    sinon.stub(element, 'sendMessageEl').get(() => ({ dispatchEvent: spy }));
+    const event = new CustomEvent('reply', {
+      detail: { messageId: '123' },
+    });
+    element.dispatchEvent(event);
+    expect(spy.called).to.be.true;
+  });
+
+  it('hides quoted message on cancel reply event', async () => {
+    const payload = {
+      data: JSON.stringify({
+        type: 'FEED',
+        messages: [{ id: '123', author: '123abc', text: 'How are you?' }],
+      }),
+    };
+    spies.addEventListener.yield(payload);
+    const event = new CustomEvent('reply', {
+      detail: { messageId: '123' },
+    });
+    element.dispatchEvent(event);
+    element.dispatchEvent(new Event('cancel-reply'));
+    const quotedMessageEl = element.shadowRoot.querySelector('quoted-message');
+    expect(element.quotedMessage).to.not.exist;
+    expect(quotedMessageEl).to.not.exist;
   });
 
   it('passes the a11y audit', async () => {

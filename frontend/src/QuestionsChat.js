@@ -71,23 +71,6 @@ export class QuestionsChat extends LitElement {
         max-height: calc(100vh - 200px);
         overflow: scroll;
       }
-
-      .quote {
-        display: flex;
-        background-color: var(--gray1);
-        padding: 20px;
-      }
-
-      .quote question-item {
-        width: 100%;
-        margin-right: 5px;
-      }
-
-      .quote .close {
-        margin-left: auto;
-        flex-shrink: 0;
-        align-self: center;
-      }
     `;
   }
 
@@ -105,7 +88,11 @@ export class QuestionsChat extends LitElement {
         message => message.id === messageId
       );
       const event = new Event('reply');
-      this.askQuestionEl.dispatchEvent(event);
+      this.sendMessageEl.dispatchEvent(event);
+    });
+
+    this.addEventListener('cancel-reply', () => {
+      this.quotedMessage = undefined;
     });
 
     this.addEventListener('message', ({ detail }) => {
@@ -141,12 +128,8 @@ export class QuestionsChat extends LitElement {
     });
   }
 
-  get askQuestionEl() {
-    return this.shadowRoot.getElementById('ask-question');
-  }
-
-  cancelReply() {
-    this.quotedMessage = undefined;
+  get sendMessageEl() {
+    return this.shadowRoot.getElementById('send-message');
   }
 
   render() {
@@ -169,27 +152,12 @@ export class QuestionsChat extends LitElement {
         ></messages-list>
         ${this.quotedMessage
           ? html`<wl-divider></wl-divider>
-              <wl-card class="quote">
-                <message-item
-                  isQuoted
-                  id=${this.quotedMessage.id}
-                  .author=${this.quotedMessage.author}
-                  text=${this.quotedMessage.text}
-                  .answers=${this.quotedMessage.answers}
-                ></message-item>
-                <wl-button
-                  class="close"
-                  fab
-                  flat
-                  inverted
-                  @click=${this.cancelReply}
-                >
-                  <wl-icon>close</wl-icon>
-                </wl-button>
-              </wl-card>`
+              <quoted-message
+                .quotedMessage=${this.quotedMessage}
+              ></quoted-message> `
           : ''}
         <wl-divider></wl-divider>
-        <send-message id="ask-question"></send-message>
+        <send-message id="send-message"></send-message>
       </main>
     `;
   }
