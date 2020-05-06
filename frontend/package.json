@@ -55,6 +55,7 @@
   "author": "questions-chat",
   "license": "MIT",
   "dependencies": {
+    "animejs": "^3.2.0",
     "eslint-config-prettier": "^6.11.0",
     "lit-element": "^2.3.1",
     "lit-html": "^1.2.1",

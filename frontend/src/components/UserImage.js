@@ -13,6 +13,7 @@ export class UserImage extends LitElement {
         display: flex;
         flex-direction: column;
         align-items: center;
+        cursor: pointer;
       }
 
       .image {
@@ -42,6 +43,14 @@ export class UserImage extends LitElement {
   constructor() {
     super();
     this.user = {};
+    this.onclick = () => {
+      const event = new CustomEvent('user-focus', {
+        bubbles: true,
+        composed: true,
+        detail: { user: this.user },
+      });
+      this.dispatchEvent(event);
+    };
   }
 
   render() {

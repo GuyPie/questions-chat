@@ -12,7 +12,7 @@ export class QuotedMessage extends LitElement {
       :host {
         display: flex;
         background-color: var(--gray1);
-        padding: 20px;
+        padding: 14px;
       }
 
       message-item {
@@ -42,18 +42,20 @@ export class QuotedMessage extends LitElement {
   }
 
   render() {
-    return html`
-      <message-item
-        isQuoted
-        id=${this.quotedMessage.id}
-        .author=${this.quotedMessage.author}
-        text=${this.quotedMessage.text}
-        .answers=${this.quotedMessage.answers}
-      ></message-item>
-      <wl-button class="close" fab flat inverted @click=${this.cancelReply}>
-        <wl-icon>close</wl-icon>
-      </wl-button>
-    `;
+    return this.quotedMessage
+      ? html`
+          <message-item
+            isQuoted
+            id=${this.quotedMessage.id}
+            .author=${this.quotedMessage.author}
+            text=${this.quotedMessage.text}
+            .answers=${this.quotedMessage.answers}
+          ></message-item>
+          <wl-button class="close" fab flat inverted @click=${this.cancelReply}>
+            <wl-icon>close</wl-icon>
+          </wl-button>
+        `
+      : '';
   }
 }
 

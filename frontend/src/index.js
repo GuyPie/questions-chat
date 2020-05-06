@@ -5,3 +5,4 @@ import './components/UsersList.js';
 import './components/UserImage.js';
 import './components/SendMessage.js';
 import './components/QuotedMessage.js';
+import './components/UserDetails.js';

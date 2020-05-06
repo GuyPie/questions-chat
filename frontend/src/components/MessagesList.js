@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit-element';
+import anime from 'animejs/lib/anime.es.js';
 
 export class MessagesList extends LitElement {
   static get properties() {
@@ -11,18 +12,18 @@ export class MessagesList extends LitElement {
   static get styles() {
     return css`
       :host {
-        padding: 10px;
         text-align: left;
-        border-radius: 50px 50px 0 0;
+        border-radius: 40px 40px 0 0;
         background-color: white;
         flex: 1;
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
         text-align: center;
       }
 
       message-item {
         display: block;
-        margin: 10px 0;
+        margin: 10px;
       }
     `;
   }
@@ -33,14 +34,36 @@ export class MessagesList extends LitElement {
     this.currentUserId = '';
   }
 
-  async updated() {
-    const isScrolledToBottom =
-      this.scrollHeight - this.clientHeight <= this.scrollTop + 1;
+  async updated(changedProperties) {
+    const isRealUpdate =
+      changedProperties.get('messages') &&
+      changedProperties.get('messages').length > -1;
 
-    if (isScrolledToBottom) {
+    if (isRealUpdate) {
       await super.updateComplete;
       await this.updateComplete;
-      this.scrollTop += this.scrollHeight - this.clientHeight;
+
+      // In real app I would check if the latest message is own message, and only scroll to bottom then
+      if (changedProperties.get('messages').length > 0) {
+        this.scrollTop = this.scrollHeight - this.clientHeight;
+      } else {
+        this.animation = anime({
+          targets: this,
+          scrollTop: this.scrollHeight - this.clientHeight,
+          duration: 400,
+          easing: 'easeInOutSine',
+          delay: 1000,
+        });
+      }
+    }
+
+    if (isRealUpdate && changedProperties.get('messages').length > 0) {
+      anime({
+        targets: this.shadowRoot.getElementById(
+          this.messages[this.messages.length - 1].id
+        ),
+        scale: [0, 1],
+      });
     }
   }
 

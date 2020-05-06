@@ -1,4 +1,5 @@
 import { LitElement, html, css } from 'lit-element';
+import anime from 'animejs/lib/anime.es.js';
 import 'weightless/textfield';
 import 'weightless/button';
 import 'weightless/progress-spinner';
@@ -25,6 +26,7 @@ export class QuestionsChat extends LitElement {
       messages: { type: Array },
       users: { type: Array },
       quotedMessage: { type: Object },
+      focusedUser: { type: Object },
     };
   }
 
@@ -59,17 +61,26 @@ export class QuestionsChat extends LitElement {
         font-weight: bold;
       }
 
+      #send-message,
+      #users-list {
+        overflow: hidden;
+      }
+
+      #quoted-message {
+        height: 0;
+      }
+
+      #focused-user {
+        height: 0;
+        overflow: hidden;
+      }
+
       main {
         display: flex;
         flex-direction: column;
         width: 100%;
         height: 100vh;
         background-color: var(--gray1);
-      }
-
-      questions-list {
-        max-height: calc(100vh - 200px);
-        overflow: scroll;
       }
     `;
   }
@@ -80,6 +91,7 @@ export class QuestionsChat extends LitElement {
     this.users = [];
     this.messages = [];
     this.quotedMessage = undefined;
+    this.focusedUser = undefined;
   }
 
   async firstUpdated() {
@@ -87,12 +99,37 @@ export class QuestionsChat extends LitElement {
       this.quotedMessage = this.messages.find(
         message => message.id === messageId
       );
+      anime({
+        targets: this.quotedMessageEl,
+        height: [0, 100],
+        opacity: [0, 1],
+        easing: 'easeOutExpo',
+        duration: 400,
+      });
       const event = new Event('reply');
       this.sendMessageEl.dispatchEvent(event);
     });
 
     this.addEventListener('cancel-reply', () => {
-      this.quotedMessage = undefined;
+      anime({
+        targets: this.quotedMessageEl,
+        height: [100, 0],
+        opacity: [1, 0],
+        easing: 'easeOutExpo',
+        complete: () => {
+          this.quotedMessage = undefined;
+        },
+        duration: 400,
+      });
+    });
+
+    this.addEventListener('user-focus', ({ detail: { user } }) => {
+      this.focusedUser = user;
+      this.toggleAnimation();
+    });
+
+    this.addEventListener('user-focus-out', () => {
+      this.toggleAnimation();
     });
 
     this.addEventListener('message', ({ detail }) => {
@@ -104,7 +141,19 @@ export class QuestionsChat extends LitElement {
             : undefined,
         })
       );
-      this.quotedMessage = undefined;
+
+      if (this.quotedMessage) {
+        anime({
+          targets: this.quotedMessageEl,
+          height: [100, 0],
+          opacity: [1, 0],
+          easing: 'easeOutExpo',
+          complete: () => {
+            this.quotedMessage = undefined;
+          },
+          duration: 400,
+        });
+      }
     });
 
     this.userDetails = await getUserInfo();
@@ -112,7 +161,7 @@ export class QuestionsChat extends LitElement {
       id: this.userDetails.login.uuid,
       firstName: this.userDetails.name.first,
       lastName: this.userDetails.name.last,
-      pictureUrl: this.userDetails.picture.medium,
+      pictureUrl: this.userDetails.picture.large,
     });
     this.ws.onerror = () => {
       this.connectionError = true;
@@ -126,10 +175,77 @@ export class QuestionsChat extends LitElement {
         this.messages = message.messages;
       }
     });
+
+    await this.updateComplete;
+    await super.updateComplete;
+    // I don't knpw why a timeout is needed
+    setTimeout(() => {
+      const tl = anime.timeline({
+        duration: 800,
+        easing: 'easeInOutElastic',
+        autoplay: false,
+      });
+      tl.add({
+        targets: [this.usersListEl, this.sendMessageEl],
+        height: 0,
+        opacity: 0,
+      });
+      tl.add(
+        {
+          targets: this.messagesListEl,
+          opacity: 0,
+          duration: 400,
+        },
+        '-=400'
+      );
+      tl.add(
+        {
+          targets: this.focusedUserEl,
+          height: '100vh',
+          duration: 200,
+          easing: 'easeOutBack',
+        },
+        '-=400'
+      );
+      this.animation = tl;
+    }, 1000);
+  }
+
+  toggleAnimation() {
+    if (this.animation.began) {
+      this.animation.reverse();
+
+      if (
+        this.animation.progress === 100 &&
+        this.animation.direction === 'reverse'
+      ) {
+        this.animation.completed = false;
+      }
+    }
+
+    if (this.animation.paused) {
+      this.animation.play();
+    }
   }
 
   get sendMessageEl() {
     return this.shadowRoot.getElementById('send-message');
+  }
+
+  get messagesListEl() {
+    return this.shadowRoot.getElementById('messages-list');
+  }
+
+  get usersListEl() {
+    return this.shadowRoot.getElementById('users-list');
+  }
+
+  get quotedMessageEl() {
+    return this.shadowRoot.getElementById('quoted-message');
+  }
+
+  get focusedUserEl() {
+    return this.shadowRoot.getElementById('focused-user');
   }
 
   render() {
@@ -145,18 +261,19 @@ export class QuestionsChat extends LitElement {
 
     return html`
       <main>
-        <users-list .users=${this.users}></users-list>
+        <users-list id="users-list" .users=${this.users}></users-list>
         <messages-list
+          id="messages-list"
           .messages=${this.messages}
           currentUserId=${this.userDetails.login.uuid}
         ></messages-list>
-        ${this.quotedMessage
-          ? html`<wl-divider></wl-divider>
-              <quoted-message
-                .quotedMessage=${this.quotedMessage}
-              ></quoted-message> `
-          : ''}
-        <wl-divider></wl-divider>
+        <div id="focused-user">
+          <user-details .user=${this.focusedUser}></user-details>
+        </div>
+        <div id="quoted-message">
+          <wl-divider></wl-divider>
+          <quoted-message .quotedMessage=${this.quotedMessage}></quoted-message>
+        </div>
         <send-message id="send-message"></send-message>
       </main>
     `;

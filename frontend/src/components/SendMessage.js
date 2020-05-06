@@ -19,8 +19,10 @@ export class SendMessage extends LitElement {
       .send-message {
         display: flex;
         align-items: center;
-        padding: 10px 20px;
+        padding: 10px;
         background-color: var(--gray1);
+        z-index: 1;
+        position: relative;
       }
 
       wl-textfield {
@@ -36,6 +38,7 @@ export class SendMessage extends LitElement {
 
   firstUpdated() {
     this.addEventListener('reply', () => {
+      console.log('here');
       this.messageEl.focus();
     });
   }
@@ -59,12 +62,7 @@ export class SendMessage extends LitElement {
 
   render() {
     return html`<form class="send-message" onsubmit="return false;">
-      <wl-textfield
-        id="message"
-        outlined
-        filled
-        label="Type a message"
-      ></wl-textfield>
+      <wl-textfield id="message" outlined label="Type a message"></wl-textfield>
       <wl-button
         type="submit"
         flat
