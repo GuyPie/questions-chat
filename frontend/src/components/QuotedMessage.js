@@ -15,7 +15,7 @@ export class QuotedMessage extends LitElement {
       }
 
       message-item {
-        width: 100%;
+        max-width: 90%;
         margin-right: 5px;
         margin-bottom: 0;
       }
@@ -46,6 +46,7 @@ export class QuotedMessage extends LitElement {
       ? html`
           <message-item
             isQuoted
+            oneLine
             id=${this.quotedMessage.id}
             .author=${this.quotedMessage.author}
             text=${this.quotedMessage.text}

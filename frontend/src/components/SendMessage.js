@@ -38,7 +38,6 @@ export class SendMessage extends LitElement {
 
   firstUpdated() {
     this.addEventListener('reply', () => {
-      console.log('here');
       this.messageEl.focus();
     });
   }

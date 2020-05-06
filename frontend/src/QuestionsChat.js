@@ -187,7 +187,7 @@ export class QuestionsChat extends LitElement {
         autoplay: false,
       });
       tl.add({
-        targets: [this.usersListEl, this.sendMessageEl],
+        targets: [this.usersListEl, this.quotedMessageEl, this.sendMessageEl],
         height: 0,
         opacity: 0,
       });
@@ -225,6 +225,7 @@ export class QuestionsChat extends LitElement {
     }
 
     if (this.animation.paused) {
+      this.quotedMessage = undefined;
       this.animation.play();
     }
   }

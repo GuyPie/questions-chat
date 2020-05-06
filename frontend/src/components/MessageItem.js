@@ -14,6 +14,7 @@ export class MessageItem extends LitElement {
       author: { type: Object },
       text: { type: String },
       quotedMessage: { type: Object },
+      oneLine: { type: Boolean },
     };
   }
 
@@ -26,6 +27,7 @@ export class MessageItem extends LitElement {
         text-align: left;
         font-size: 0.9rem;
         margin-bottom: 10px;
+        mind-width: 0;
       }
 
       .bold {
@@ -65,6 +67,13 @@ export class MessageItem extends LitElement {
       .message-container.quoted .message {
         max-width: initial;
         flex: 1;
+        min-width: 0;
+      }
+
+      .message-container.one-line .message-text {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
       }
 
       .reply {
@@ -103,6 +112,7 @@ export class MessageItem extends LitElement {
     this.author = {};
     this.text = '';
     this.quotedMessage = undefined;
+    this.oneLine = false;
   }
 
   reply() {
@@ -120,6 +130,7 @@ export class MessageItem extends LitElement {
         class="message-container ${classMap({
           'own-message': this.isOwnMessage,
           quoted: this.isQuoted,
+          'one-line': this.oneLine,
         })}"
       >
         <user-image .user=${this.author}></user-image>
