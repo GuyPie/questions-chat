@@ -197,16 +197,16 @@ export class QuestionsChat extends LitElement {
           opacity: 0,
           duration: 400,
         },
-        '-=400'
+        '-=800'
       );
       tl.add(
         {
           targets: this.focusedUserEl,
           height: '100vh',
-          duration: 200,
-          easing: 'easeOutBack',
+          duration: 800,
+          easing: 'easeOutExpo',
         },
-        '-=400'
+        '-=800'
       );
       this.animation = tl;
     }, 1000);
