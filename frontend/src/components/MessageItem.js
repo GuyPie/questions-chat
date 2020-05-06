@@ -34,6 +34,7 @@ export class MessageItem extends LitElement {
 
       .message-container {
         display: flex;
+        align-items: center;
       }
 
       .message-container.own-message {

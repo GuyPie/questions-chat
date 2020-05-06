@@ -25,7 +25,6 @@ export class UserImage extends LitElement {
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 5px;
       }
 
       .name {
