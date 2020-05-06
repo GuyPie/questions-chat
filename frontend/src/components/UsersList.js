@@ -32,6 +32,7 @@ export class UsersList extends LitElement {
       h3 {
         text-align: left;
         margin: 10px 0;
+        font-size: 1.1rem;
       }
     `;
   }

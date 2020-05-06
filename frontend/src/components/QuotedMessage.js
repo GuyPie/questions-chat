@@ -11,13 +11,13 @@ export class QuotedMessage extends LitElement {
     return css`
       :host {
         display: flex;
-        background-color: var(--gray1);
         padding: 14px;
       }
 
       message-item {
         width: 100%;
         margin-right: 5px;
+        margin-bottom: 0;
       }
 
       .close {

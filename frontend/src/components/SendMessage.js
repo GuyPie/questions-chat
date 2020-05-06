@@ -20,7 +20,7 @@ export class SendMessage extends LitElement {
         display: flex;
         align-items: center;
         padding: 10px;
-        background-color: var(--gray1);
+        background-color: white;
         z-index: 1;
         position: relative;
       }

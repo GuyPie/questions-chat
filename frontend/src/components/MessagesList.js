@@ -13,7 +13,7 @@ export class MessagesList extends LitElement {
     return css`
       :host {
         text-align: left;
-        border-radius: 40px 40px 0 0;
+        border-radius: 20px 20px 0 0;
         background-color: white;
         flex: 1;
         overflow-y: auto;
@@ -23,7 +23,7 @@ export class MessagesList extends LitElement {
 
       message-item {
         display: block;
-        margin: 10px;
+        margin: 20px;
       }
     `;
   }

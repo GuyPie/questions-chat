@@ -33,21 +33,19 @@ export class QuestionsChat extends LitElement {
   static get styles() {
     return css`
       :host {
-        --gray1: #f0f0f0;
-        --gray2: #eaeaea;
-        --turquoise: #49bfaf;
-        --green: #60c38a;
+        --blue: #1c2f8d;
+        --purple: #6630f5;
+        --lightpink: #f9f6ff;
+        --pink: #eae9fc;
         --primary-hue: 224;
         --primary-saturation: 45%;
-        --primary-400: 145.455, 35.9129%, 51.3529%;
-        --primary-500: 145.455, 45.2055%, 57.0588%;
-        --primary-600: 145.455, 57.346%, 62.7647%;
+        --primary-400: 256.447, 71.9854%, 51.7059%;
+        --primary-500: 256.447, 90.7834%, 57.451%;
+        --primary-600: 257.626, 100%, 60.3529%;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        font-size: calc(8px + 1vmin);
-        color: #1a2b42;
         max-width: 960px;
         margin: 0 auto;
         text-align: center;
@@ -64,6 +62,7 @@ export class QuestionsChat extends LitElement {
       #send-message,
       #users-list {
         overflow: hidden;
+        color: var(--blue);
       }
 
       #quoted-message {
@@ -73,6 +72,7 @@ export class QuestionsChat extends LitElement {
       #focused-user {
         height: 0;
         overflow: hidden;
+        color: var(--blue);
       }
 
       main {
@@ -80,7 +80,8 @@ export class QuestionsChat extends LitElement {
         flex-direction: column;
         width: 100%;
         height: 100vh;
-        background-color: var(--gray1);
+        background-color: var(--pink);
+        color: #9696a2;
       }
     `;
   }
@@ -101,7 +102,7 @@ export class QuestionsChat extends LitElement {
       );
       anime({
         targets: this.quotedMessageEl,
-        height: [0, 100],
+        height: [0, 86],
         opacity: [0, 1],
         easing: 'easeOutExpo',
         duration: 400,
@@ -113,7 +114,7 @@ export class QuestionsChat extends LitElement {
     this.addEventListener('cancel-reply', () => {
       anime({
         targets: this.quotedMessageEl,
-        height: [100, 0],
+        height: [86, 0],
         opacity: [1, 0],
         easing: 'easeOutExpo',
         complete: () => {
@@ -145,7 +146,7 @@ export class QuestionsChat extends LitElement {
       if (this.quotedMessage) {
         anime({
           targets: this.quotedMessageEl,
-          height: [100, 0],
+          height: [86, 0],
           opacity: [1, 0],
           easing: 'easeOutExpo',
           complete: () => {
@@ -273,6 +274,7 @@ export class QuestionsChat extends LitElement {
         <div id="quoted-message">
           <wl-divider></wl-divider>
           <quoted-message .quotedMessage=${this.quotedMessage}></quoted-message>
+          <wl-divider></wl-divider>
         </div>
         <send-message id="send-message"></send-message>
       </main>
