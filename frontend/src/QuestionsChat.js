@@ -183,7 +183,7 @@ export class QuestionsChat extends LitElement {
     setTimeout(() => {
       const tl = anime.timeline({
         duration: 800,
-        easing: 'easeInOutElastic',
+        easing: 'easeInElastic',
         autoplay: false,
       });
       tl.add({
