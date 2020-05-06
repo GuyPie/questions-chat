@@ -16,6 +16,7 @@ export class UserDetails extends LitElement {
         flex-direction: column;
         padding: 20px;
         align-items: center;
+        border-radius: 25px;
       }
 
       .top {
