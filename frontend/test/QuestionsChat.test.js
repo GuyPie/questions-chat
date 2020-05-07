@@ -1,4 +1,4 @@
-import { html, fixture, expect } from '@open-wc/testing';
+import { html, fixture, expect, oneEvent, waitUntil } from '@open-wc/testing';
 import sinon from 'sinon';
 
 import { mockDependencies } from '../src/QuestionsChat.js';
@@ -96,14 +96,12 @@ describe('QuestionsChat', () => {
       detail: { messageId: '123' },
     });
     element.dispatchEvent(event);
-    await element.updateComplete;
-    const quotedMessageEl = element.shadowRoot.querySelector('quoted-message');
     expect(element.quotedMessage).to.eql({
       id: '123',
       author: '123abc',
       text: 'How are you?',
     });
-    expect(quotedMessageEl).to.exist;
+    expect(element.quotedMessageEl.classList.contains('visible')).to.be.true;
   });
 
   it('focuses send message input on reply event', async () => {
@@ -114,13 +112,12 @@ describe('QuestionsChat', () => {
       }),
     };
     spies.addEventListener.yield(payload);
-    const spy = sinon.spy();
-    sinon.stub(element, 'sendMessageEl').get(() => ({ dispatchEvent: spy }));
     const event = new CustomEvent('reply', {
       detail: { messageId: '123' },
     });
-    element.dispatchEvent(event);
-    expect(spy.called).to.be.true;
+    setTimeout(() => element.dispatchEvent(event));
+    const dispatchedEvent = await oneEvent(element.sendMessageEl, 'reply');
+    expect(dispatchedEvent).to.exist;
   });
 
   it('hides quoted message on cancel reply event', async () => {
@@ -137,8 +134,9 @@ describe('QuestionsChat', () => {
     element.dispatchEvent(event);
     element.dispatchEvent(new Event('cancel-reply'));
     const quotedMessageEl = element.shadowRoot.querySelector('quoted-message');
+    expect(quotedMessageEl.classList.contains('visible')).to.be.false;
+    await waitUntil(() => !element.quotedMessage);
     expect(element.quotedMessage).to.not.exist;
-    expect(quotedMessageEl).to.not.exist;
   });
 
   it('passes the a11y audit', async () => {

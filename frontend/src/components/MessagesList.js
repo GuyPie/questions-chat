@@ -25,6 +25,10 @@ export class MessagesList extends LitElement {
         display: block;
         margin: 20px;
       }
+
+      message-item:last-of-type {
+        margin-bottom: 10px;
+      }
     `;
   }
 
@@ -35,26 +39,27 @@ export class MessagesList extends LitElement {
   }
 
   async updated(changedProperties) {
+    const isScrolledToBottom =
+      this.scrollHeight - this.clientHeight <= this.scrollTop + 100;
     const isRealUpdate =
       changedProperties.get('messages') &&
       changedProperties.get('messages').length > -1;
 
-    if (isRealUpdate) {
+    if (
+      isRealUpdate &&
+      (changedProperties.get('messages').length === 0 ||
+        isScrolledToBottom ||
+        this.animation.progress < 100)
+    ) {
       await super.updateComplete;
       await this.updateComplete;
 
-      // In real app I would check if the latest message is own message, and only scroll to bottom then
-      if (changedProperties.get('messages').length > 0) {
-        this.scrollTop = this.scrollHeight - this.clientHeight;
-      } else {
-        this.animation = anime({
-          targets: this,
-          scrollTop: this.scrollHeight - this.clientHeight,
-          duration: 400,
-          easing: 'easeInOutSine',
-          delay: 1000,
-        });
-      }
+      this.animation = anime({
+        targets: this,
+        scrollTop: this.scrollHeight - this.clientHeight,
+        duration: 400,
+        easing: 'easeInOutSine',
+      });
     }
 
     if (isRealUpdate && changedProperties.get('messages').length > 0) {

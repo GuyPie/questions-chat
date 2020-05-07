@@ -15,9 +15,9 @@ export class QuotedMessage extends LitElement {
       }
 
       message-item {
-        max-width: 90%;
         margin-right: 5px;
         margin-bottom: 0;
+        min-width: 0;
       }
 
       .close {

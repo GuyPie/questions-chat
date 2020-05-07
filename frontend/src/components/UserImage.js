@@ -27,6 +27,10 @@ export class UserImage extends LitElement {
         justify-content: center;
       }
 
+      img {
+        width: 100%;
+      }
+
       .name {
         font-weight: bold;
         font-size: 0.8rem;

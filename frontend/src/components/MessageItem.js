@@ -27,7 +27,7 @@ export class MessageItem extends LitElement {
         text-align: left;
         font-size: 0.9rem;
         margin-bottom: 10px;
-        mind-width: 0;
+        min-width: 0;
       }
 
       .bold {
@@ -46,9 +46,10 @@ export class MessageItem extends LitElement {
       .message {
         background-color: var(--lightpink);
         margin-left: 10px;
-        border-radius: 0 var(--message-border-radius)
-          var(--message-border-radius) var(--message-border-radius);
+        border-radius: var(--message-border-radius) var(--message-border-radius)
+          var(--message-border-radius) 0;
         max-width: 60%;
+        overflow: hidden;
       }
 
       .message .message-text {
@@ -60,8 +61,8 @@ export class MessageItem extends LitElement {
         color: var(--lightpink);
         margin-left: 0;
         margin-right: 10px;
-        border-radius: var(--message-border-radius) 0
-          var(--message-border-radius) var(--message-border-radius);
+        border-radius: var(--message-border-radius) var(--message-border-radius)
+          0 var(--message-border-radius);
       }
 
       .message-container.quoted .message {
@@ -86,18 +87,14 @@ export class MessageItem extends LitElement {
       .quoted-message {
         background-color: var(--pink);
         color: var(--blue);
-        padding: 5px;
+        padding: 10px 15px;
         font-size: 0.75rem;
-        padding-left: 10px;
-        padding-right: 15px;
-        border-radius: 0 var(--message-border-radius) 0 0;
         margin-bottom: -10px;
       }
 
       .message-container.own-message .quoted-message {
         background-color: var(--lightpink);
         color: var(--blue);
-        border-radius: var(--message-border-radius) 0 0 0;
         padding-right: 10px;
         padding-left: 15px;
       }

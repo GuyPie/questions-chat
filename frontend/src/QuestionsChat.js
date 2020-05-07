@@ -42,6 +42,8 @@ export class QuestionsChat extends LitElement {
         --primary-400: 256.447, 71.9854%, 51.7059%;
         --primary-500: 256.447, 90.7834%, 57.451%;
         --primary-600: 257.626, 100%, 60.3529%;
+        --input-font-family: 'Open Sans', sans-serif;
+        --input-font-size: 0.9rem;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -49,6 +51,7 @@ export class QuestionsChat extends LitElement {
         max-width: 960px;
         margin: 0 auto;
         text-align: center;
+        font-family: 'Open Sans', sans-serif;
       }
 
       .spinner {
@@ -66,7 +69,15 @@ export class QuestionsChat extends LitElement {
       }
 
       #quoted-message {
-        height: 0;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.2s, opacity 0.4s;
+        transition-timing-function: ease-out;
+      }
+
+      #quoted-message.visible {
+        max-height: 100px;
+        opacity: 1;
       }
 
       #focused-user {
@@ -100,28 +111,13 @@ export class QuestionsChat extends LitElement {
       this.quotedMessage = this.messages.find(
         message => message.id === messageId
       );
-      anime({
-        targets: this.quotedMessageEl,
-        height: [0, 86],
-        opacity: [0, 1],
-        easing: 'easeOutExpo',
-        duration: 400,
-      });
+      this.quotedMessageEl.classList.add('visible');
       const event = new Event('reply');
       this.sendMessageEl.dispatchEvent(event);
     });
 
     this.addEventListener('cancel-reply', () => {
-      anime({
-        targets: this.quotedMessageEl,
-        height: [86, 0],
-        opacity: [1, 0],
-        easing: 'easeOutExpo',
-        complete: () => {
-          this.quotedMessage = undefined;
-        },
-        duration: 400,
-      });
+      this.hideQuotedMessage();
     });
 
     this.addEventListener('user-focus', ({ detail: { user } }) => {
@@ -144,16 +140,7 @@ export class QuestionsChat extends LitElement {
       );
 
       if (this.quotedMessage) {
-        anime({
-          targets: this.quotedMessageEl,
-          height: [86, 0],
-          opacity: [1, 0],
-          easing: 'easeOutExpo',
-          complete: () => {
-            this.quotedMessage = undefined;
-          },
-          duration: 400,
-        });
+        this.hideQuotedMessage();
       }
     });
 
@@ -176,29 +163,23 @@ export class QuestionsChat extends LitElement {
         this.messages = message.messages;
       }
     });
+  }
 
-    await this.updateComplete;
-    await super.updateComplete;
-    // I don't knpw why a timeout is needed
-    setTimeout(() => {
+  toggleAnimation() {
+    this.quotedMessage = undefined;
+    this.quotedMessageEl.classList.remove('visible');
+
+    if (!this.animation) {
       const tl = anime.timeline({
         duration: 800,
         easing: 'easeInElastic',
         autoplay: false,
       });
       tl.add({
-        targets: [this.usersListEl, this.quotedMessageEl, this.sendMessageEl],
+        targets: [this.usersListEl, this.sendMessageEl],
         height: 0,
         opacity: 0,
       });
-      tl.add(
-        {
-          targets: this.messagesListEl,
-          opacity: 0,
-          duration: 400,
-        },
-        '-=800'
-      );
       tl.add(
         {
           targets: this.focusedUserEl,
@@ -209,10 +190,8 @@ export class QuestionsChat extends LitElement {
         '-=800'
       );
       this.animation = tl;
-    }, 1000);
-  }
+    }
 
-  toggleAnimation() {
     if (this.animation.began) {
       this.animation.reverse();
 
@@ -228,6 +207,13 @@ export class QuestionsChat extends LitElement {
       this.quotedMessage = undefined;
       this.animation.play();
     }
+  }
+
+  hideQuotedMessage() {
+    this.quotedMessageEl.classList.remove('visible');
+    setTimeout(() => {
+      this.quotedMessage = undefined;
+    }, 200);
   }
 
   get sendMessageEl() {
